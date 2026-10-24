@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --color-paper: #f3eee4;
+  --color-ink: #1c1915;
+  --color-spine: #1b2823;
+  --color-spine-soft: #24352f;
+  --color-copper: #c4622d;
+  --color-copper-deep: #8d3f16;
+  --color-moss: #2f6f5e;
+  --color-line: #e4d9c8;
+  --color-card: #fbf8f2;
+  --color-muted: #6d6458;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgb(196 98 45 / 10%), transparent 55%),
+    radial-gradient(700px 380px at 100% 0%, rgb(47 111 94 / 10%), transparent 50%),
+    var(--color-paper);
+  min-height: 100%;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
+}
+
+.paper-grid {
+  background-image: linear-gradient(to right, rgb(28 25 21 / 4%) 1px, transparent 1px);
+  background-size: 28px 100%;
+}
+
+@keyframes folio-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  animation: folio-blink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}

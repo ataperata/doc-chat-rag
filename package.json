@@ -1,0 +1,34 @@
+{
+  "name": "doc-chat-rag",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Ata Perata <99473563+ataperata@users.noreply.github.com>",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "^4.0.156",
+    "@supabase/supabase-js": "^2.118.0",
+    "ai": "^7.0.152",
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "unpdf": "^1.9.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}
