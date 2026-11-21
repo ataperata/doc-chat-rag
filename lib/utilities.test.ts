@@ -128,4 +128,16 @@ describe("migration", () => {
     expect(sql).toMatch(/vector_cosine_ops/);
     expect(sql).toMatch(/storage\.buckets/);
   });
+
+  it("scans selected documents exactly instead of filtering HNSW candidates", () => {
+    const sql = readFileSync(
+      "supabase/migrations/20261121090000_exact_match_for_selected_documents.sql",
+      "utf8",
+    );
+    expect(sql).toMatch(/create or replace function public\.match_document_chunks/i);
+    expect(sql).toMatch(/as materialized/i);
+    expect(sql).toMatch(/c\.document_id = any \(filter_document_ids\)/);
+    expect(sql).toMatch(/grant execute on function public\.match_document_chunks[\s\S]*to service_role/i);
+    expect(sql).toMatch(/revoke all on function public\.match_document_chunks[\s\S]*from public, anon, authenticated/i);
+  });
 });

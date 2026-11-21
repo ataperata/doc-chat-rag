@@ -62,7 +62,7 @@ You can also upload a text-based PDF up to 20 MB. Image-only scans have no text 
 ## Supabase
 
 1. Create a project in the Supabase dashboard.
-2. Open the SQL editor and run [`supabase/migrations/20261023235000_init_rag.sql`](supabase/migrations/20261023235000_init_rag.sql).
+2. Open the SQL editor and run the files in [`supabase/migrations`](supabase/migrations) in order: [`20261023235000_init_rag.sql`](supabase/migrations/20261023235000_init_rag.sql), then [`20261121090000_exact_match_for_selected_documents.sql`](supabase/migrations/20261121090000_exact_match_for_selected_documents.sql).
 
    Or, with the [Supabase CLI](https://supabase.com/docs/guides/cli) linked to that project:
 
@@ -81,6 +81,8 @@ The migration:
 - enables row level security and revokes `anon` / `authenticated` from both tables
 - grants those tables, and execute on the match function, to `service_role` only
 - creates a private Storage bucket named `pdfs` (20 MB, PDF only)
+
+The second migration replaces `match_document_chunks`. When the question is limited to selected documents it scans only their chunks exactly, so it returns the full number of passages. The HNSW index applies its candidate limit before the document filter, which could leave few or no passages once the table held more than a few documents. With no selection the index is still used.
 
 There is no public read policy. The Data API cannot list your library with the anon key. The service role bypasses RLS and is used only in route handlers.
 
