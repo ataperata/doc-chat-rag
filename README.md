@@ -124,7 +124,7 @@ Vercel does not use the Edge runtime here. Streaming runs on the Node.js runtime
 ```bash
 npm run dev         # local app
 npm run lint        # eslint
-npm run typecheck   # tsc --noEmit
+npm run typecheck   # route types, then tsc --noEmit
 npm test            # vitest, no network
 npm run build       # next build
 ```
