@@ -13,6 +13,8 @@ export type RankableChunk = {
   pageNumber: number;
   chunkIndex: number;
   embedding: number[];
+  /** Tokens of `content`, cached by the caller so each query does not re-tokenize. */
+  terms?: ReadonlySet<string>;
 };
 
 export function rankChunks(
@@ -26,7 +28,7 @@ export function rankChunks(
 
   return chunks
     .map((chunk) => {
-      const lexical = lexicalOverlap(queryTerms, tokenize(chunk.content));
+      const lexical = lexicalOverlap(queryTerms, chunk.terms ?? new Set(tokenize(chunk.content)));
       const cosine = cosineSimilarity(queryEmbedding, chunk.embedding);
       return {
         id: chunk.id,
@@ -46,9 +48,8 @@ export function rankChunks(
     .slice(0, limit);
 }
 
-export function lexicalOverlap(queryTerms: string[], chunkTerms: string[]) {
-  if (queryTerms.length === 0 || chunkTerms.length === 0) return 0;
-  const chunkSet = new Set(chunkTerms);
+export function lexicalOverlap(queryTerms: string[], chunkSet: ReadonlySet<string>) {
+  if (queryTerms.length === 0 || chunkSet.size === 0) return 0;
   const uniqueQuery = [...new Set(queryTerms)];
   let hits = 0;
   for (const term of uniqueQuery) {
