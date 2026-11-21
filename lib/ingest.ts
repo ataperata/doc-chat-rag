@@ -3,7 +3,8 @@ import { embedTexts } from "@/lib/embeddings";
 import { storagePathFor } from "@/lib/files";
 import { HttpError } from "@/lib/http";
 import { getLibrary } from "@/lib/store";
-import type { PageText } from "@/lib/types";
+import type { StoredDocument } from "@/lib/store/types";
+import type { DocumentSummary, PageText } from "@/lib/types";
 
 const MAX_CHUNKS = 200;
 
@@ -32,17 +33,18 @@ export async function ingestPages(input: {
     input.storagePath ??
     (input.bytes && input.bytes.byteLength > 0 ? storagePathFor(id, input.name) : null);
 
+  const document: StoredDocument = {
+    id,
+    name: input.name,
+    storagePath,
+    byteSize: input.byteSize,
+    pageCount: input.pages.length,
+    status: "ready",
+    error: null,
+    createdAt,
+  };
   await getLibrary().save(
-    {
-      id,
-      name: input.name,
-      storagePath,
-      byteSize: input.byteSize,
-      pageCount: input.pages.length,
-      status: "ready",
-      error: null,
-      createdAt,
-    },
+    document,
     chunks.map((chunk, index) => ({
       id: crypto.randomUUID(),
       documentId: id,
@@ -56,8 +58,17 @@ export async function ingestPages(input: {
       : null,
   );
 
-  const documents = await getLibrary().listDocuments();
-  const saved = documents.find((document) => document.id === id);
-  if (!saved) throw new Error("The document was saved but could not be reloaded.");
+  // Everything in the summary is already known here, so there is no need to
+  // reload the whole library just to find the row that was inserted.
+  const saved: DocumentSummary = {
+    id,
+    name: document.name,
+    pageCount: document.pageCount,
+    chunkCount: chunks.length,
+    byteSize: document.byteSize,
+    status: document.status,
+    error: document.error,
+    createdAt,
+  };
   return saved;
 }

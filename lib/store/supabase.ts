@@ -15,6 +15,8 @@ type MatchRow = {
   similarity: number;
 };
 
+const CHUNK_BATCH = 25;
+
 let client: SupabaseClient | null = null;
 
 function admin() {
@@ -82,9 +84,16 @@ export const supabaseLibrary: LibraryStore = {
       throw new Error(documentError.message);
     }
 
-    try {
-      for (let index = 0; index < nextChunks.length; index += 25) {
-        const slice = nextChunks.slice(index, index + 25).map((chunk) => ({
+    // Each row carries a 1536-float embedding, so rows go in batches of 25.
+    // The batches are independent and are sent together instead of one
+    // round trip after another.
+    const batches: StoredChunk[][] = [];
+    for (let index = 0; index < nextChunks.length; index += CHUNK_BATCH) {
+      batches.push(nextChunks.slice(index, index + CHUNK_BATCH));
+    }
+    const results = await Promise.allSettled(
+      batches.map(async (batch) => {
+        const rows = batch.map((chunk) => ({
           id: chunk.id,
           document_id: chunk.documentId,
           content: chunk.content,
@@ -92,29 +101,30 @@ export const supabaseLibrary: LibraryStore = {
           chunk_index: chunk.chunkIndex,
           embedding: chunk.embedding,
         }));
-        const { error } = await db.from("document_chunks").insert(slice);
+        const { error } = await db.from("document_chunks").insert(rows);
         if (error) throw new Error(error.message);
-      }
-    } catch (error) {
+      }),
+    );
+    const failed = results.find((result) => result.status === "rejected");
+    if (failed) {
+      // Deleting the document cascades to any batches that did land.
       await db.from("documents").delete().eq("id", document.id);
       if (pdf) await db.storage.from(PDF_BUCKET).remove([pdf.path]);
-      throw error;
+      throw failed.reason;
     }
   },
 
   async deleteDocument(id) {
     const db = admin();
+    // One round trip: delete the row and read back its storage path.
     const { data, error } = await db
       .from("documents")
-      .select("storage_path")
+      .delete()
       .eq("id", id)
-      .maybeSingle();
+      .select("storage_path");
     if (error) throw new Error(error.message);
 
-    const { error: deleteError } = await db.from("documents").delete().eq("id", id);
-    if (deleteError) throw new Error(deleteError.message);
-
-    const path = data?.storage_path;
+    const path = data?.[0]?.storage_path;
     if (typeof path === "string" && path.length > 0) {
       await db.storage.from(PDF_BUCKET).remove([path]);
     }
