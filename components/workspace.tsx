@@ -33,9 +33,10 @@ export function Workspace() {
     let cancelled = false;
     void (async () => {
       try {
+        // Start both requests before awaiting either so they run in parallel.
         const [nextConfig, library] = await Promise.all([
-          readApi<PublicConfig>(await fetch("/api/config")),
-          readApi<{ documents: DocumentSummary[] }>(await fetch("/api/documents")),
+          fetch("/api/config").then((response) => readApi<PublicConfig>(response)),
+          fetch("/api/documents").then((response) => readApi<{ documents: DocumentSummary[] }>(response)),
         ]);
         if (cancelled) return;
         setConfig(nextConfig);
