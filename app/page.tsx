@@ -1,5 +1,10 @@
+import { AccessGate } from "@/components/access-gate";
 import { Workspace } from "@/components/workspace";
 
 export default function HomePage() {
-  return <Workspace />;
+  return (
+    <AccessGate>
+      <Workspace />
+    </AccessGate>
+  );
 }

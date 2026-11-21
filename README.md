@@ -33,6 +33,7 @@ flowchart TD
 | `lib/embeddings.ts` | AI Gateway embeddings, or a local hash in demo mode |
 | `lib/store/` | Memory store, or Supabase Storage + `match_document_chunks` |
 | `app/api/chat` | Retrieval, then AI SDK `streamText` or a local cited answer |
+| `proxy.ts`, `lib/access.ts` | Optional password gate for `/api` routes |
 | `supabase/migrations` | pgvector, tables, HNSW index, RLS, private `pdfs` bucket |
 
 The browser never sees the service role key. In live mode it receives only the anon key, and only to upload a large PDF to a signed URL. Documents and embeddings are read and written by the server.
@@ -102,10 +103,26 @@ cp .env.example .env.local
 | `AI_CHAT_MODEL` | Optional. Default `openai/gpt-5.4-mini` |
 | `AI_EMBEDDING_MODEL` | Optional. Default `openai/text-embedding-3-small` |
 | `FOLIO_DATA_MODE` | `demo`, `live`, or empty |
+| `FOLIO_ACCESS_PASSWORD` | Optional. Turns on the access gate described below |
+| `FOLIO_SESSION_SECRET` | Required when `FOLIO_ACCESS_PASSWORD` is set. At least 32 characters |
 
 Empty `FOLIO_DATA_MODE` selects **live** only when the three Supabase variables and a model credential are all present. The model credential is `AI_GATEWAY_API_KEY` or, on Vercel, `VERCEL_OIDC_TOKEN`. Anything missing keeps the app in demo mode.
 
 Do not commit `.env.local`. `.env.example` lists names only.
+
+### Access gate
+
+Leave `FOLIO_ACCESS_PASSWORD` unset and Folio stays an open demo. Set it and the app asks for that password before it opens. After a correct password, `POST /api/auth` sets a `folio_session` cookie (HttpOnly, SameSite=Lax, Secure over HTTPS) that lasts seven days. Every other `/api` route answers 401 without it. `DELETE /api/auth` signs out.
+
+The cookie is signed with HMAC-SHA256 using a key derived from `FOLIO_SESSION_SECRET`. Generate one with:
+
+```bash
+openssl rand -hex 32
+```
+
+If the password is set and the secret is missing or shorter than 32 characters, every `/api` request fails with a 500 that names the missing variable. Changing either value signs everyone out.
+
+This is one shared password, not user accounts, and it does not rate limit attempts. Pick a long password.
 
 ## Vercel
 
