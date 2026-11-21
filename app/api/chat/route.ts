@@ -96,16 +96,20 @@ function parseMessages(value: unknown): FolioUIMessage[] {
       throw new HttpError("A chat message was malformed.", 400);
     }
     const message = entry as { id?: unknown; role?: unknown; parts?: unknown };
-    if (
-      (message.role !== "user" && message.role !== "assistant" && message.role !== "system") ||
-      !Array.isArray(message.parts)
-    ) {
+    // System instructions come from the server only, and only text parts are
+    // forwarded so a client cannot attach files or URLs for the model to fetch.
+    if ((message.role !== "user" && message.role !== "assistant") || !Array.isArray(message.parts)) {
       throw new HttpError("A chat message was malformed.", 400);
     }
+    const parts = message.parts.flatMap((part: unknown) => {
+      if (!part || typeof part !== "object") return [];
+      const { type, text } = part as { type?: unknown; text?: unknown };
+      return type === "text" && typeof text === "string" ? [{ type: "text" as const, text }] : [];
+    });
     return {
       id: typeof message.id === "string" ? message.id : crypto.randomUUID(),
       role: message.role,
-      parts: message.parts,
+      parts,
     } as FolioUIMessage;
   });
 }
