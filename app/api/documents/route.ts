@@ -25,6 +25,16 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Reject oversized bodies before formData() buffers them into memory.
+    // The extra 64 KB covers multipart boundaries and headers.
+    const declared = Number(request.headers.get("content-length"));
+    if (!Number.isFinite(declared) || declared <= 0) {
+      throw new HttpError("The upload needs a Content-Length header.", 411);
+    }
+    if (declared > MAX_PDF_BYTES + 64 * 1024) {
+      throw new HttpError("That PDF is larger than 20 MB.", 413);
+    }
+
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
